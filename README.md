@@ -1,4 +1,4 @@
-# LinkNest API - A Multi-Tenant Link-in-Bio Service
+# LinkNest - A Multi-Tenant Link-in-Bio Service
 
 ![Java](https://img.shields.io/badge/Java-17-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen) ![JPA](https://img.shields.io/badge/JPA%2FHibernate-orange) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-blue) ![JWT](https://img.shields.io/badge/Security-JWT-purple)
 
