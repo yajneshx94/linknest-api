@@ -11,6 +11,10 @@ COPY mvnw pom.xml ./
 # Copy the actual source code
 COPY src ./src
 
+# --- THIS IS THE FIX ---
+# Ensure the maven wrapper is executable before running it
+RUN chmod +x mvnw
+
 # Build the project and create the JAR file
 RUN ./mvnw package -DskipTests
 
