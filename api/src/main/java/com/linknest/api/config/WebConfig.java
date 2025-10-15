@@ -13,9 +13,12 @@ public class WebConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**") // Apply to all API endpoints under /api
-                        .allowedOrigins("http://localhost:5173") // Allow your React app's origin
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS") // Allow common methods
+                registry.addMapping("/api/**")
+                        .allowedOrigins(
+                                "http://localhost:5173",
+                                "https://*.vercel.app"
+                        )
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }
