@@ -16,7 +16,8 @@ public class WebConfig {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
                                 "http://localhost:5173",
-                                "https://*.vercel.app"
+                                "https://*.vercel.app",
+                                "https://*.onrender.com"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS")
                         .allowedHeaders("*")
