@@ -16,6 +16,7 @@ public class WebConfig {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
                                 "http://localhost:5173",
+                                "https://linknest-ui.vercel.app",
                                 "https://*.vercel.app",
                                 "https://*.onrender.com"
                         )
