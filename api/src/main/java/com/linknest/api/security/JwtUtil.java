@@ -1,56 +1,85 @@
 package com.linknest.api.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
+import com.linknest.api.model.User;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtUtil {
 
-    @Value("${app.jwt.secret}")
+    @Value("${jwt.secret}")
     private String secret;
 
-    private static final long EXPIRATION_TIME_MS = 1000 * 60 * 60 * 10; // 10 hours
+    @Value("${jwt.expiration}")
+    private Long expiration;
 
-    // Generates a JWT for a given username
-    public String generateToken(String username) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    // Create a secure key from the secret string
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = secret.getBytes();
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // Generate token with username AND isAdmin claim
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("isAdmin", user.getIsAdmin() != null && user.getIsAdmin());
 
         return Jwts.builder()
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME_MS))
-                .signWith(key)
+                .setClaims(claims)
+                .setSubject(user.getUsername())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    // We will add methods here later to validate the token
-    // after sometime i added the token validation methods
-    public String getUsernameFromToken(String token) {
-        SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        Jws<Claims> claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-        return claims.getPayload().getSubject();
+    // Extract username from token
+    public String extractUsername(String token) {
+        return extractAllClaims(token).getSubject();
     }
 
-    public boolean validateToken(String token) {
-        try {
-            SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            // Log the error or handle it as needed
-            System.out.println("Invalid JWT token: " + e.getMessage());
+    // Extract isAdmin from token
+    public Boolean extractIsAdmin(String token) {
+        Claims claims = extractAllClaims(token);
+        Object isAdminObj = claims.get("isAdmin");
+        if (isAdminObj == null) {
+            return false;
         }
-        return false;
+        return Boolean.valueOf(isAdminObj.toString());
+    }
+
+    // Validate token
+    public Boolean validateToken(String token, String username) {
+        final String extractedUsername = extractUsername(token);
+        return (extractedUsername.equals(username) && !isTokenExpired(token));
+    }
+
+    // Check if token is expired
+    private Boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    // Extract expiration date
+    private Date extractExpiration(String token) {
+        return extractAllClaims(token).getExpiration();
+    }
+
+    // Extract all claims
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
