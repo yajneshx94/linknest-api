@@ -57,8 +57,15 @@ public class AuthController {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-        // If authentication is successful, generate a JWT
-        String jwt = jwtUtil.generateToken(loginRequest.getUsername());
+        // If authentication is successful, get the username
+        String username = authentication.getName();
+
+        // Fetch the full User object from the repository
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in repository"));
+
+        // Generate the JWT using the User object
+        String jwt = jwtUtil.generateToken(user);
 
         // Return the JWT in the response
         return ResponseEntity.ok(java.util.Collections.singletonMap("token", jwt));

@@ -59,9 +59,11 @@ public class JwtUtil {
     }
 
     // Validate token
-    public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+    public Boolean validateToken(String token) {
+        // Just checking if it's expired is enough.
+        // isTokenExpired() calls extractAllClaims(), which will
+        // throw an exception if the token is invalid or malformed.
+        return !isTokenExpired(token);
     }
 
     // Check if token is expired
