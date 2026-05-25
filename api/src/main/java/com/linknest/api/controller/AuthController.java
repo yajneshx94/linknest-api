@@ -64,14 +64,4 @@ public class AuthController {
         // Return the JWT in the response
         return ResponseEntity.ok(java.util.Collections.singletonMap("token", jwt));
     }
-
-    // TEMPORARY ENDPOINT - REMOVE AFTER USING!
-    @PostMapping("/make-admin/{username}")
-    public ResponseEntity<?> makeAdmin(@PathVariable String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setIsAdmin(true);
-        userRepository.save(user);
-        return ResponseEntity.ok("User " + username + " is now admin");
-    }
 }
