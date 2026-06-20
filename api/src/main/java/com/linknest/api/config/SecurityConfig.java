@@ -68,8 +68,7 @@ public class SecurityConfig {
                 // 4. Set up authorization rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**", "/api/links/public/**").permitAll()
-                        .requestMatchers(toH2Console()).permitAll()
+                        .requestMatchers("/api/auth/**", "/api/links/public/**", "/api/profile/public/**").permitAll()                        .requestMatchers(toH2Console()).permitAll()
                         .anyRequest().authenticated()
                 )
 
