@@ -1,86 +1,121 @@
-# LinkNest - A Multi-Tenant Link-in-Bio Service
+# LinkNest API
 
 ![Java](https://img.shields.io/badge/Java-17-blue) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen) ![JPA](https://img.shields.io/badge/JPA%2FHibernate-orange) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-blue) ![JWT](https://img.shields.io/badge/Security-JWT-purple)
 
-This repository contains the backend REST API for **LinkNest**, a full-stack, multi-tenant "link-in-bio" application. This service allows users to register for an account, manage a personal list of links through a secure dashboard, and share them via a single, public profile page.
 
-The core of this project is its **multi-tenant architecture**, designed to serve multiple users (tenants) from a single running instance of the application while ensuring strict data isolation and security.
+The Spring Boot backend for LinkNest, a full-stack link management application. It exposes REST endpoints for authentication, user profiles, link management, public link pages, click tracking, and administrator views.
 
-**Live Frontend Demo:** [Link to your deployed Vercel URL will go here]
-**Frontend Repository:** [Link to your `linknest-ui` GitHub repository]
+## Features
 
----
+- User registration and login.
+- JWT creation at login and JWT-based authentication for endpoints that require a signed-in user.
+- Create, read, update, and delete links.
+- Store profile information and public/private profile settings.
+- Retrieve public link data by username.
+- Track link clicks and expose basic link analytics.
+- Provide administrator statistics and user-management endpoints.
 
-## Key Features & Architectural Concepts
+## Technology
 
-This API demonstrates several key concepts crucial for modern backend development:
+- Java 17
+- Spring Boot 3.5.x
+- Spring Web
+- Spring Security
+- Spring Data JPA
+- H2 for the reviewed local default configuration
+- PostgreSQL driver/support for configurations that use PostgreSQL
+- JWT library
+- BCrypt password hashing
+- Lombok
+- JUnit and Mockito for selected tests
 
-* **Multi-Tenant Architecture:** Built from the ground up to support multiple users securely. The application uses a **Shared Database, Shared Schema** approach, where a `user_id` foreign key on the `links` table ensures that every piece of data is tied to a specific tenant. All database queries are scoped to the authenticated user, guaranteeing strict data isolation.
+## Architecture
 
-* **Secure Authentication:** User authentication is handled via **JSON Web Tokens (JWT)**. The API provides endpoints for user registration and login. Upon successful login, a signed JWT is issued to the client, which is then used to authorize access to protected resources.
+```text
+React frontend
+      ↓ HTTP / REST
+Spring Boot controllers
+      ↓
+Application logic + JWT authentication
+      ↓
+Spring Data repositories
+      ↓
+H2 (local default) or configured relational database
+```
 
-* **Full CRUD Functionality:** The API provides a complete set of RESTful endpoints for managing links, including creating, reading, updating, and deleting (CRUD) operations for the authenticated user.
+## Main endpoints
 
-* **Public & Protected Endpoints:** The application correctly separates public-facing endpoints (like viewing a user's profile) from protected endpoints (like the user's private dashboard for managing links), which are secured using the JWT authentication filter.
+### Authentication
 
----
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/api/auth/register` | Register a user |
+| `POST` | `/api/auth/login` | Authenticate credentials and return a JWT |
 
-## Tech Stack
+### Links
 
-This API is built with a modern, robust Java-based stack:
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/links` | Retrieve the authenticated user's links |
+| `POST` | `/api/links` | Create a link |
+| `PUT` | `/api/links/{id}` | Update a link |
+| `DELETE` | `/api/links/{id}` | Delete a link |
+| `POST` | `/api/links/{id}/click` | Record a link click |
+| `GET` | `/api/links/analytics` | Retrieve link analytics |
+| `GET` | `/api/links/public/{username}` | Retrieve public link data |
 
-* **Framework:** Spring Boot 3
-* **Security:** Spring Security 6, JSON Web Tokens (JWT)
-* **Database:** Spring Data JPA / Hibernate
-* **Database Driver:** PostgreSQL (for production), H2 (for local development)
-* **Build Tool:** Maven
-* **Language:** Java 17
+### Profile and administration
 
----
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/profile` | Retrieve the signed-in user's profile |
+| `PUT` | `/api/profile` | Update the signed-in user's profile |
+| `GET` | `/api/profile/public/{username}` | Public-profile data endpoint in the controller |
+| `GET` | `/api/admin/stats` | Administrator statistics |
+| `GET` | `/api/admin/users` | Administrator user listing |
+| `GET` | `/api/admin/users/recent` | Recently registered users |
+| `GET` | `/api/admin/growth` | User growth information |
+| `POST` | `/api/admin/users/{userId}/toggle-admin` | Toggle a user's administrator flag |
 
-## API Endpoints
+**Authorization note:** the reviewed security configuration explicitly permits `/api/auth/**` and `/api/links/public/**`, then requires authentication for other requests. Verify the authorization rule for `/api/profile/public/{username}` before describing that endpoint as accessible to unauthenticated visitors.
 
-All endpoints are prefixed with `/api`.
+## JWT flow
 
-### Authentication (`/auth`)
+1. A user submits username and password to `/api/auth/login`.
+2. The backend authenticates the credentials and returns a signed JWT.
+3. The frontend sends the token in the `Authorization: Bearer <token>` header on subsequent requests.
+4. The backend JWT filter validates the token and establishes authentication for the request.
 
-| Method | Endpoint         | Access | Description                             |
-| :----- | :--------------- | :----- | :-------------------------------------- |
-| `POST` | `/auth/register` | Public | Registers a new user (tenant).          |
-| `POST` | `/auth/login`    | Public | Authenticates a user and returns a JWT. |
+The token contains the username as its subject, an `isAdmin` claim, and issued/expiration timestamps. The token is signed with HS512. The payload is encoded, not encrypted.
 
-### Links (`/links`)
+## Database model
 
-| Method   | Endpoint                   | Access    | Description                                     |
-| :------- | :------------------------- | :-------- | :------------------------------------------------ |
-| `GET`    | `/links`                   | Protected | Retrieves all links for the authenticated user.   |
-| `POST`   | `/links`                   | Protected | Creates a new link for the authenticated user.    |
-| `PUT`    | `/links/{id}`              | Protected | Updates an existing link owned by the user.       |
-| `DELETE` | `/links/{id}`              | Protected | Deletes a link owned by the user.                 |
-| `GET`    | `/links/public/{username}` | Public    | Retrieves the public list of links for a user.    |
+- `User` stores account and profile fields.
+- `Link` stores link information and is associated with a user.
+- One user can have multiple links; each link is associated with one user.
 
----
+The reviewed local configuration uses a file-backed H2 database. PostgreSQL support is present, but set the correct datasource configuration for the environment where you run or deploy the application.
 
-## Setup and Run Locally
+## Run locally
 
-To run this project on your local machine, follow these steps:
+Requirements: Java 17, Maven, and Node.js only if you also want to run the frontend.
 
-1.  **Prerequisites:**
-    * Java 17 (or later)
-    * Maven
+From the directory containing `pom.xml`:
 
-2.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/your-username/linknest-api.git](https://github.com/your-username/linknest-api.git)
-    cd linknest-api
-    ```
+```bash
+mvn spring-boot:run
+```
 
-3.  **Run the application:**
-    The project is configured to use an in-memory H2 database by default for easy setup.
-    ```bash
-    ./mvnw spring-boot:run
-    ```
-    The API will be available at `http://localhost:8080`.
+The backend uses port `8080` by default unless configured otherwise. Check `src/main/resources/application.properties` for datasource, JWT, and service settings.
 
-4.  **Access the H2 Console (Optional):**
-    While the application is running, you can view the in-memory database at `http://localhost:8080/h2-console`. Use the JDBC URL `jdbc:h2:mem:linknestdb`.
+Set a strong, private JWT secret and appropriate expiration settings for your environment. Do not commit real secrets to source control. Use HTTPS for deployed environments.
+
+## Tests
+
+Selected unit tests cover JWT token handling and user-details lookup. This is not a claim of exhaustive test coverage.
+
+## Scope and limitations
+
+- The backend provides recommendation/analytics-style data, but it should not be described as a production-scale platform without additional evidence.
+- Actual database behaviour depends on the datasource configuration used by the running environment.
+- API access rules should be checked against the intended public-profile behaviour before deployment.
